@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const YOUTUBE_URL = "https://www.youtube.com/playlist?list=REPLACE_ME";
 
@@ -83,6 +84,7 @@ const WizardForm = () => {
     } catch { return {}; }
   });
   const [done, setDone] = useState(false);
+  const [sending, setSending] = useState(false);
   const [direction, setDirection] = useState<"next" | "prev">("next");
   const [animating, setAnimating] = useState(false);
 
@@ -104,9 +106,19 @@ const WizardForm = () => {
     return currentStep.fields.every(f => !f.required || (data[f.name] && data[f.name].trim() !== ""));
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (!isStepValid()) return;
     if (step === totalSteps - 1) {
+      setSending(true);
+      try {
+        const { error } = await supabase.functions.invoke("send-form-email", {
+          body: data,
+        });
+        if (error) console.error("Email send error:", error);
+      } catch (e) {
+        console.error("Email send error:", e);
+      }
+      setSending(false);
       setAnimating(true);
       setDirection("next");
       setTimeout(() => { setDone(true); setAnimating(false); }, 280);
@@ -211,14 +223,16 @@ const WizardForm = () => {
       <div className="mt-6">
         <button
           onClick={goNext}
-          disabled={!isStepValid()}
+          disabled={!isStepValid() || sending}
           className="flex items-center justify-center gap-2 w-full h-12 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40"
           style={{ background: "var(--btn-bg)", color: "#0b0f14" }}
-          onMouseEnter={e => { if (isStepValid()) e.currentTarget.style.background = "var(--btn-hover)"; }}
+          onMouseEnter={e => { if (isStepValid() && !sending) e.currentTarget.style.background = "var(--btn-hover)"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "var(--btn-bg)"; }}
         >
-          {step === totalSteps - 1 ? "Enviar" : "Próximo Passo"}
-          <ChevronRight size={16} />
+          {sending ? (
+            <><Loader2 size={16} className="animate-spin" /> Enviando...</>
+          ) : step === totalSteps - 1 ? "Enviar" : "Próximo Passo"}
+          {!sending && <ChevronRight size={16} />}
         </button>
       </div>
     </>
