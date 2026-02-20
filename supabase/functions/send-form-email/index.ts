@@ -48,8 +48,8 @@ serve(async (req) => {
     `;
 
     const { error } = await resend.emails.send({
-      from: formData.fromEmail || "Formulário <onboarding@resend.dev>",
-      to: [formData.toEmail],
+      from: "Formulário <onboarding@resend.dev>",
+      to: ["maestrycomp@gmail.com"],
       subject: `Nova lead: ${formData.nome || "Sem nome"}`,
       html,
     });
