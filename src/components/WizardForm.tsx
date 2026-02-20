@@ -111,10 +111,13 @@ const WizardForm = () => {
     if (step === totalSteps - 1) {
       setSending(true);
       try {
-        const { error } = await supabase.functions.invoke("send-form-email", {
-          body: data,
-        });
-        if (error) console.error("Email send error:", error);
+        await fetch("/api/send", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(data),
+});
       } catch (e) {
         console.error("Email send error:", e);
       }
